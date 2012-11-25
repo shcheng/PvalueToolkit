@@ -19,9 +19,8 @@ class edfPval:
     """
       Initialize the pval given the filename
       and number of nPts for the plots
-      The input file will consists of an ascii file
-      with the following fields:
-      obs | exp | rms | p-value
+      The input file will consists of an  1D 
+      array of p-value
     """
     nSam     = len(data)
     slpval   = sort( -log10(data) )     # x-axis value (-log10 pvalue)
