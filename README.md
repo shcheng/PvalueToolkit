@@ -1,7 +1,7 @@
 pvalueToolkit
 =============
 
-The purpose of this toolkit has two classes:
+This toolkit has the following classes:
 
 (1) edfPval class: is for visualizing the end tail of a distribution of p-values and 
                    for assessing its significance.
