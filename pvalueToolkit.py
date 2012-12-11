@@ -19,8 +19,9 @@ class edfPval:
     """
       Initialize the pval given the filename
       and number of nPts for the plots
-      The input file will consists of an  1D 
-      array of p-value
+      The input file will consists of an ascii file
+      with the following fields:
+      obs | exp | rms | p-value
     """
     nSam     = len(data)
     slpval   = sort( -log10(data) )     # x-axis value (-log10 pvalue)
@@ -51,6 +52,39 @@ class edfPval:
     """
     nSam   = self.dataSize 
     pval   = st.uniform.rvs( size=(nSim,nSam) )
+    slpval = sort(-log10(pval))
+    b50 = zeros(nSam)
+    b68 = zeros((2,nSam))
+    b90 = zeros((2,nSam))
+    b95 = zeros((2,nSam))
+    for j in range(nSam):
+      l = sort(slpval[0:,j])
+      b50[j]    = l[int(0.50*nSim)]
+      b68[0][j] = l[int(0.16*nSim)]
+      b68[1][j] = l[int(0.84*nSim)]
+      b90[0][j] = l[int(0.05*nSim)]
+      b90[1][j] = l[int(0.95*nSim)]
+      b95[0][j] = l[int(0.025*nSim)]
+      b95[1][j] = l[int(0.975*nSim)]
+    bands = {50:b50, 68:b68, 90:b90, 95:b95}
+    nfrac = (nSam - 1.*array(range(nSam)))/float(nSam)
+    yLowLimit = min(nfrac)
+    return bands, nfrac, yLowLimit
+
+  def getMCPoissonEdf(self, exp, nSim=10000):
+    """
+      This should be used when dealing with DISCRETE poisson 
+      random variates. It calculates the expected MC non-uniform 
+      edf of p-values.
+      Returns:  
+      (1) a dictionary with the median (50-percentile), the 68-,
+      90- and the 95-percentiles.
+      (2) the corresponding values in the y-axis.
+      (3) lowest limit on the y-axis.
+    """
+    nSam   = self.dataSize 
+    obs    = st.poisson.rvs( exp, size=(nSim,nSam) )
+    pval   = 1 - st.poisson.cdf(obs, exp) + st.poisson.pmf(obs, exp)
     slpval = sort(-log10(pval))
     b50 = zeros(nSam)
     b68 = zeros((2,nSam))
@@ -108,3 +142,13 @@ class compPval:
     for i in range(nSam):
       bP += weights[i] * st.gamma.cdf(-logTT, 1./weights[i], loc=0, scale=weights[i])
     return 1.-bP
+
+  def getMCPvalue(self, obs, exp, weights, nSim):
+    nSam = len(weights)
+    hypPval  = 1. - st.poisson.cdf(obs, exp) + st.poisson.pmf(obs, exp) 
+    nullObs  = st.poisson.rvs(exp, size=(nSim,nSam))
+    nullPval = 1. - st.poisson.cdf(nullObs, exp) + st.poisson.pmf(nullObs, exp)
+    
+    obsLogTT     = prod( (hypPval**weights) )
+    nullLogTT = prod( (nullPval**weights), axis=1 )
+    return sum( nullLogTT<=obsLogTT )/(nSim*1.)
