@@ -146,7 +146,7 @@ class compPval:
   def getMCPvalue(self, obs, exp, weights, nSim):
     nSam = len(weights)
     hypPval  = 1. - st.poisson.cdf(obs, exp) + st.poisson.pmf(obs, exp) 
-    nullObs  = st.poisson.rvs(exp, size=(nSim,nSam))
+    nullObs  = st.poisson.rvs(repeat(exp.reshape(1,nSam), nSim, axis=0))
     nullPval = 1. - st.poisson.cdf(nullObs, exp) + st.poisson.pmf(nullObs, exp)
     
     obsLogTT     = prod( (hypPval**weights) )
